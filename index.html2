@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KitchenOS Pro | Inventory, Purchasing & Accounting</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white">
+
+<!-- App Shell -->
+<div id="app" class="max-w-md mx-auto min-h-screen flex flex-col bg-slate-950 border-x border-slate-800 shadow-2xl">
+
+<!-- Header -->
+<header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<div class="bg-emerald-500 text-slate-950 p-1.5 rounded-lg font-bold flex items-center justify-center">
+<i data-lucide="chef-hat" class="w-5 h-5"></i>
+</div>
+<div>
+<h1 class="font-bold text-base leading-tight">KitchenOS Pro</h1>
+<p class="text-xs text-slate-400">Operations & Financial Ledger</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Live
+</span>
+</header>
+
+<!-- Navigation Tabs -->
+<nav class="grid grid-cols-5 bg-slate-900/50 border-b border-slate-800 text-[10px] font-medium text-center">
+<button onclick="switchTab('inventory')" id="tab-inventory" class="py-3 text-emerald-400 border-b-2 border-emerald-500 transition-colors flex flex-col items-center justify-center gap-1">
+<i data-lucide="sliders" class="w-4 h-4"></i> Stock
+</button>
+<button onclick="switchTab('invoices')" id="tab-invoices" class="py-3 text-slate-400 border-b-2 border-transparent transition-colors flex flex-col items-center justify-center gap-1">
+<i data-lucide="scan-text" class="w-4 h-4"></i> Invoices
+</button>
+<button onclick="switchTab('orders')" id="tab-orders" class="py-3 text-slate-400 border-b-2 border-transparent transition-colors flex flex-col items-center justify-center gap-1">
+<i data-lucide="shopping-cart" class="w-4 h-4"></i> Guide
+</button>
+<button onclick="switchTab('history')" id="tab-history" class="py-3 text-slate-400 border-b-2 border-transparent transition-colors flex flex-col items-center justify-center gap-1">
+<i data-lucide="history" class="w-4 h-4"></i> History
+</button>
+<button onclick="switchTab('accounting')" id="tab-accounting" class="py-3 text-slate-400 border-b-2 border-transparent transition-colors flex flex-col items-center justify-center gap-1">
+<i data-lucide="pie-chart" class="w-4 h-4"></i> P&L
+</button>
+</nav>
+
+<!-- Main Content Area -->
+<main class="flex-1 p-4 pb-24 overflow-y-auto">
+
+<!-- VIEW 1: INVENTORY SLIDERS -->
+<section id="view-inventory" class="space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-semibold text-sm">Walk-In Count</h2>
+<p class="text-xs text-slate-400">Adjust counts to match physical stock.</p>
+</div>
+<button onclick="resetInventory()" class="text-xs text-slate-400 hover:text-slate-200 underline">Reset</button>
+</div>
+<div id="inventory-list" class="space-y-3"></div>
+</section>
+
+<!-- VIEW 2: AI INVOICE PARSER -->
+<section id="view-invoices" class="hidden space-y-4">
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+<div class="flex items-center space-x-2 text-emerald-400">
+<i data-lucide="sparkles" class="w-5 h-5"></i>
+</div>
+<div>
+<h2 class="font-semibold text-sm">AI Vendor Invoice Ingestion</h2>
+<p class="text-xs text-slate-400 mt-0.5">Parse delivery sheets to sync pricing and update historical par velocity.</p>
+</div>
+<button onclick="simulateInvoiceIngest()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-2">
+<i data-lucide="upload-cloud" class="w-4 h-4"></i> Simulate Vendor Invoice Scan
+</button>
+</div>
+<div id="invoice-log" class="space-y-2">
+<h3 class="text-xs font-medium text-slate-400 uppercase tracking-wider">Recent Ingestion Log</h3>
+<div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-xs flex items-center justify-between">
+<div class="space-y-0.5">
+<p class="font-medium text-slate-200">Sysco Delivery #88492</p>
+<p class="text-[10px] text-slate-400">Updated 14 items • Pricing synced</p>
+</div>
+<span class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-[10px]">Parsed</span>
+</div>
+</div>
+</section>
+
+<!-- VIEW 3: ORDER GUIDE -->
+<section id="view-orders" class="hidden space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-semibold text-sm">Generated Order Guide</h2>
+<p class="text-xs text-slate-400">Par level minus current stock.</p>
+</div>
+<span id="order-total" class="text-xs font-mono font-bold text-emerald-400">$0.00</span>
+</div>
+<div id="order-list" class="space-y-2"></div>
+<button onclick="submitOrder()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2">
+<i data-lucide="send" class="w-4 h-4"></i> Submit Purchase Order
+</button>
+</section>
+
+<!-- VIEW 4: ORDER HISTORY -->
+<section id="view-history" class="hidden space-y-4">
+<div>
+<h2 class="font-semibold text-sm">Order History Log</h2>
+<p class="text-xs text-slate-400">Past submitted purchasing cycles.</p>
+</div>
+<div id="history-list" class="space-y-3"></div>
+</section>
+
+<!-- VIEW 5: ACCOUNTING / COST ANALYSIS -->
+<section id="view-accounting" class="hidden space-y-4">
+<div>
+<h2 class="font-semibold text-sm">Cost & Spend P&L</h2>
+<p class="text-xs text-slate-400">Real-time valuation of inventory and weekly spend.</p>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-1">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider">Total Inventory Value</p>
+<p id="stat-inv-val" class="text-lg font-mono font-bold text-emerald-400">$0.00</p>
+</div>
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-1">
+<p class="text-[10px] text-slate-400 uppercase tracking-wider">Estimated Weekly Spend</p>
+<p id="stat-weekly-spend" class="text-lg font-mono font-bold text-blue-400">$0.00</p>
+</div>
+</div>
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+<h3 class="text-xs font-medium text-slate-300">Category Cost Breakdown</h3>
+<div class="space-y-2 text-xs">
+<div class="flex justify-between items-center"><span class="text-slate-400">Dry Goods & Spices</span><span class="font-mono">$425.00</span></div>
+<div class="flex justify-between items-center"><span class="text-slate-400">Dairy & Perishables</span><span class="font-mono">$840.00</span></div>
+<div class="flex justify-between items-center"><span class="text-slate-400">Oils & Vinegars</span><span class="font-mono">$310.00</span></div>
+</div>
+</div>
+</section>
+
+</main>
+
+<!-- Persistent Footer status -->
+<footer class="sticky bottom-0 bg-slate-900 border-t border-slate-800 p-3 text-center text-[10px] text-slate-400">
+KitchenOS Pro • Built for high-velocity culinary execution.
+</footer>
+</div>
+
+<script>
+let inventory = [
+{ id: 1, name: "Kosher Salt (Diamond Crystal)", unit: "cases", par: 6, current: 2, price: 42.50 },
+{ id: 2, name: "Unsalted Butter (Quarters)", unit: "cases", par: 10, current: 4, price: 84.00 },
+{ id: 3, name: "Heavy Cream (40%)", unit: "qts", par: 12, current: 5, price: 6.75 },
+{ id: 4, name: "Balsamic Vinegar", unit: "btls", par: 4, current: 1, price: 18.25 },
+{ id: 5, name: "Extra Virgin Olive Oil", unit: "jugs", par: 5, current: 2, price: 54.00 }
+];
+
+let orderHistory = [
+{ id: "PO-9482", date: "Yesterday, 4:15 AM", itemsCount: 4, total: 312.50, status: "Delivered" },
+{ id: "PO-9411", date: "Sep 24, 3:50 AM", itemsCount: 6, total: 584.25, status: "Delivered" }
+];
+
+function switchTab(tabName) {
+['inventory', 'invoices', 'orders', 'history', 'accounting'].forEach(t => {
+document.getElementById(`view-${t}`).classList.add('hidden');
+document.getElementById(`tab-${t}`).className = "py-3 text-slate-400 border-b-2 border-transparent transition-colors flex flex-col items-center justify-center gap-1";
+});
+document.getElementById(`view-${tabName}`).classList.remove('hidden');
+document.getElementById(`tab-${tabName}`).className = "py-3 text-emerald-400 border-b-2 border-emerald-500 transition-colors flex flex-col items-center justify-center gap-1";
+
+if(tabName === 'orders') renderOrders();
+if(tabName === 'history') renderHistory();
+if(tabName === 'accounting') renderAccounting();
+lucide.createIcons();
+}
+
+function renderInventory() {
+const container = document.getElementById('inventory-list');
+container.innerHTML = inventory.map(item => `
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-medium text-sm text-slate-200">${item.name}</h3>
+<p class="text-[10px] text-slate-400">Par Target: <span class="text-emerald-400 font-semibold">${item.par} ${item.unit}</span> | Cost: $${item.price.toFixed(2)}</p>
+</div>
+<span class="px-2 py-0.5 bg-slate-800 rounded text-xs font-mono font-bold text-slate-300">
+${item.current} ${item.unit}
+</span>
+</div>
+<input type="range" min="0" max="${item.par * 2}" value="${item.current}"
+oninput="updateStock(${item.id}, this.value)"
+class="w-full accent-emerald-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+</div>
+`).join('');
+lucide.createIcons();
+}
+
+function updateStock(id, val) {
+const item = inventory.find(i => i.id === id);
+if(item) {
+item.current = parseInt(val);
+renderInventory();
+}
+}
+
+function renderOrders() {
+const container = document.getElementById('order-list');
+let total = 0;
+const orders = inventory.map(item => {
+const deficit = Math.max(0, item.par - item.current);
+const cost = deficit * item.price;
+total += cost;
+return { ...item, deficit, cost };
+}).filter(item => item.deficit > 0);
+
+document.getElementById('order-total').innerText = `$${total.toFixed(2)}`;
+
+if(orders.length === 0) {
+container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">All stations fully stocked! No orders required.</div>`;
+return;
+}
+
+container.innerHTML = orders.map(o => `
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
+<div>
+<p class="font-medium text-slate-200">${o.name}</p>
+<p class="text-[10px] text-slate-400">Ordering: <span class="text-emerald-400 font-bold">${o.deficit} ${o.unit}</span></p>
+</div>
+<span class="font-mono font-semibold text-slate-300">$${o.cost.toFixed(2)}</span>
+</div>
+`).join('');
+lucide.createIcons();
+}
+
+function submitOrder() {
+alert("Purchase order successfully transmitted to vendor endpoint!");
+orderHistory.unshift({ id: "PO-" + Math.floor(1000 + Math.random() * 9000), date: "Just now", itemsCount: 3, total: 245.00, status: "Submitted" });
+switchTab('history');
+}
+
+function renderHistory() {
+const container = document.getElementById('history-list');
+container.innerHTML = orderHistory.map(h => `
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
+<div class="space-y-0.5">
+<p class="font-medium text-slate-200">${h.id} • <span class="text-emerald-400">${h.status}</span></p>
+<p class="text-[10px] text-slate-400">${h.date} • ${h.itemsCount} line items</p>
+</div>
+<span class="font-mono font-bold text-slate-300">$${h.total.toFixed(2)}</span>
+</div>
+`).join('');
+}
+
+function renderAccounting() {
+let totalVal = inventory.reduce((acc, i) => acc + (i.current * i.price), 0);
+let weeklySpend = inventory.reduce((acc, i) => acc + (Math.max(0, i.par - i.current) * i.price), 0);
+document.getElementById('stat-inv-val').innerText = `$${totalVal.toFixed(2)}`;
+document.getElementById('stat-weekly-spend').innerText = `$${weeklySpend.toFixed(2)}`;
+}
+
+function simulateInvoiceIngest() {
+alert("AI Invoice Parser: Successfully extracted line items, mapped vendor units, and updated par velocities!");
+inventory[0].par += 1;
+renderInventory();
+}
+
+function resetInventory() {
+inventory.forEach(i => i.current = Math.floor(i.par / 2));
+renderInventory();
+}
+
+renderInventory();
+lucide.createIcons();
+</script>
+</body>
+</html>
